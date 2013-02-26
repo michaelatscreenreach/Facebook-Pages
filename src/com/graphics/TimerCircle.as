@@ -13,6 +13,7 @@ package com.graphics
 	{
 		[Embed(source="/../ASSETS/circle.swf", symbol="Circle")] private var Circle:Class
 		
+		
 		public var circle:MovieClip = new Circle()
 		
 		private var time:int;
