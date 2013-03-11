@@ -18,6 +18,8 @@ package com.data
 		[Embed(source="/../ASSETS/smallcomment.png")] private var SmallComment:Class;
 		[Embed(source="/../ASSETS/loadingscreen.png")] private var SplashScreen:Class;
 		[Embed(source="/../ASSETS/line.png")] private var Line:Class;
+		[Embed(source="/../ASSETS/loadingAnim.png")]	private var LoadingAnim:Class;
+
 
 
 

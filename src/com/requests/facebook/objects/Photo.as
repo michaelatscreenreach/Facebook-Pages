@@ -11,13 +11,14 @@ package com.requests.facebook.objects
 	import flash.events.IOErrorEvent;
 	import flash.net.URLLoader;
 	import flash.net.URLRequest;
+	import flash.utils.ByteArray;
 
 	public class Photo extends EventDispatcher
 	{
 		public var facebookID:String
 		public var id:String
 		public var photoURL:String
-		public var photo:Bitmap
+		public var photo:ByteArray
 		public var created_time:String
 		public var like_count:String
 		public var comment_count:String
@@ -36,7 +37,9 @@ package com.requests.facebook.objects
 
 			if (data.images !=null && data.images != undefined){
 				this.photoURL = data.images[0].source
-				var photoLoader:ImageLoader = new ImageLoader(photoURL, {name:"photo", width:360, height:360, scaleMode:"proportionalOutside", onError:updateError,onComplete:photoLoaded, autoDispose:true});
+				var photoLoader:DataLoader = new DataLoader(photoURL, {name:"photo",format:"binary", onError:updateError,onComplete:photoLoaded, autoDispose:true});
+
+//				var photoLoader:ImageLoader = new ImageLoader(photoURL, {name:"photo", width:360, height:360, scaleMode:"proportionalOutside", onError:updateError,onComplete:photoLoaded, autoDispose:true});
 				photoLoader.load()	
 					
 			}	else {
@@ -59,7 +62,7 @@ package com.requests.facebook.objects
 		}
 		
 		private function photoLoaded(e:Event):void{
-			photo = e.target.rawContent
+			photo = DataLoader(e.target).content
 			update();	
 
 			

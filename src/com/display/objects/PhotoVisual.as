@@ -2,6 +2,7 @@ package com.display.objects
 {
 	import com.components.DateConv;
 	import com.data.AssetManager;
+	import com.displayutils.uk.soulwire.utils.display.DisplayUtils;
 	import com.greensock.TweenMax;
 	import com.greensock.easing.*;
 	import com.greensock.loading.ImageLoader;
@@ -15,6 +16,7 @@ package com.display.objects
 	import flash.display.Shape;
 	import flash.display.Sprite;
 	import flash.events.Event;
+	import flash.geom.Rectangle;
 	import flash.text.TextField;
 	
 	public class PhotoVisual extends VisualObject
@@ -30,6 +32,7 @@ package com.display.objects
 		private var mainText:TextField;
 		private var textMask:Sprite;
 		public var likesText:TextField;
+		private var photoLoader:Loader;
 		
 		public function PhotoVisual(feedObject:FeedObject)
 		{
@@ -51,15 +54,17 @@ package com.display.objects
 			//add Photo
 			var photoContainer:Sprite = new Sprite
 			photoVisualContainer.addChild(photoContainer)
-			var photo:Bitmap = photoObject.photoData		
-			photoContainer.addChild(photo)						
+			photoLoader = new Loader()
+			photoLoader.contentLoaderInfo.addEventListener(Event.COMPLETE, onPhotoLoaded)
+			photoLoader.loadBytes(photoObject.photoData)						
+			photoContainer.addChild(photoLoader)						
 			//add mask
 			var maskShape:Shape = new Shape()
 			maskShape.graphics.beginFill(0)
 			maskShape.graphics.drawRect(0,0,photoWidth, photoHeight)
 			maskShape.graphics.endFill()
 			photoContainer.addChild(maskShape)
-			photo.mask = maskShape
+			photoLoader.mask = maskShape
 			//move photo
 			photoContainer.x = 10
 			photoContainer.y = (blackBackground.height - photoHeight)/2
@@ -143,6 +148,13 @@ package com.display.objects
 			
 		}
 		
+		protected function onPhotoLoaded(event:Event):void
+		{
+			
+		DisplayUtils.fitIntoRect(photoLoader.content, new Rectangle(0,0, photoWidth, photoHeight))
+
+		}
+		
 		override public function update():void{
 			likesText.text = String(photoObject.noOfLikes).replace( /\d{1,3}(?=(\d{3})+(?!\d))/g , "$&,")
 		}		
@@ -164,19 +176,18 @@ package com.display.objects
 			mainText = null
 			textMask = null
 			likesText = null
+			photoLoader = null
 		}
 		
-		private function parseDate(created_time:String):String
+		private function parseDate(created_time:Date):String
 		{
-			//2012-05-03T09:19:23+0000
+			//			Tue Feb 26 06:15:44 GMT+0000 2013	
 			
-			var date:String = created_time
-			var dateSplit:Array = date.split("-")
-			dateSplit[2] = String(dateSplit[2]).slice(0,2)
-			date = dateSplit[2] +" " + DateConv.convert(dateSplit[1])
-			
-			// TODO Auto Generated method stub
-			return date;
+			var timeDisplay:String = created_time.toTimeString().substr(0, 5)
+			var dateDisplay:String = " - " + created_time.date +"/" +(created_time.monthUTC+1)+"/"+created_time.fullYear
+			var fullDisplay:String = timeDisplay + dateDisplay;
+
+			return fullDisplay;
 		}
 		
 		override public function animateIn():void{

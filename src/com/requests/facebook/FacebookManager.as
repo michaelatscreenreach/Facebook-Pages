@@ -33,10 +33,13 @@ package com.requests.facebook
 		
 
 		private var dataPhotosLength:uint;
+
+		public var photoGroupObjects:Array
 		
 		
 		public function FacebookManager(auth:OAuthToken, disallowedFeedItemsList:Array, settings:SettingsManager)
-		{			
+		{	
+			photoGroupObjects = new Array();
 			this.settings = settings
 			refreshTime = settings.refreshTime
 			disallowedFeedItems = disallowedFeedItemsList
@@ -80,6 +83,8 @@ package com.requests.facebook
 				for each (var fo:Object in jsonData.feed.data) 
 				{
 					var allowed:Boolean = true
+						
+						
 					for each (var disallowedFeed:String in disallowedFeedItems) 
 					{
 //						trace(settings.allowUserContent)
@@ -205,7 +210,7 @@ package com.requests.facebook
 				fo.type ="photoGroup"
 				fo.photoGroup = photoGroup				
 				var feedObject:FeedObject = new FeedObject()
-				feedObject.addEventListener("FEED_OBJECT_LOADED", addFeedObject)
+				feedObject.addEventListener("FEED_OBJECT_LOADED", addPhotoGroupObject)
 				feedObject.create(fo, authToken,name, settings.timeBetweenObjects)					
 				photoGroupCount +=1
 			}					
@@ -216,36 +221,51 @@ package com.requests.facebook
 			
 		}
 		
+		protected function addPhotoGroupObject(e:Event):void
+		{
+			var feedObject:FeedObject = FeedObject(e.target)
+				
+			photoGroupObjects.push(feedObject)			
+		}
+		
 		protected function addFeedObject(e:Event):void
 		{		
 			e.target.removeEventListener("FEED_OBJECT_LOADED", addFeedObject)
-			var fO:FeedObject = FeedObject(e.target)
-			if (fO.type == "question"){
-			for each (var feedObject:FeedObject in feed) 
-			{
-				if (fO.id == feedObject.id){
-				for each (var pollOption:PollOption in feedObject.poll.options) 
+			var feedObject:FeedObject = FeedObject(e.target)
+			var compareDate:Date = new Date()
+				
+			
+			if (settings.dayFilter != "0" && settings.dayFilter != ""){
+				compareDate.setDate(compareDate.date-Number(settings.dayFilter))
+				trace(trace(compareDate))
+			
+			if (feedObject.created_time < compareDate){
+			return
+			}
+			}
+				
+			if (feedObject.type == "question"){
+				for each (var feedObj:FeedObject in feed) 
 				{
-					for each (var pollOption2:PollOption in fO.poll.options) 
-					{
-						if (pollOption.id == pollOption2.id){
-							pollOption.vote_count = pollOption2.vote_count
-//							return;
-							
+					if (feedObject.id == feedObj.id){
+						for each (var pollOption:PollOption in feedObj.poll.options) 
+						{
+							for each (var pollOption2:PollOption in feedObject.poll.options) 
+							{
+								if (pollOption.id == pollOption2.id){
+									pollOption.vote_count = pollOption2.vote_count
+									//							return;									
+								}
+							}							
 						}
-					}
-					
-				}
-				fO = null
-				return 
-			} 
-			}
+						feedObject = null
+						return 
+					} 
+				}				
+			}						
 			
-			}
-			
-			var randomPos:int = int(Math.random() * feed.length);			
-			feed.splice(randomPos,0,e.target)			
-			
+			feed.push(feedObject)
+			feed.sortOn("created_time",Array.NUMERIC | Array.DESCENDING)
 		}
 	}
 }

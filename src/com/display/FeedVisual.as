@@ -7,26 +7,32 @@ package com.display
 	import com.display.objects.VisualObject;
 	import com.graphics.TimerCircle;
 	import com.requests.facebook.objects.FeedObject;
+	import com.requests.facebook.objects.PhotoGroup;
 	
 	import flash.display.Sprite;
 	import flash.events.Event;
 	
 	public class FeedVisual extends Sprite
 	{
-		
+			
 		private var queue:Array
 		private var photos:Array
 		private var currentFeedObject:FeedObject
 		private var currentVisual:VisualObject
+		private var currentArray:Array
 		private var timeBetweenFeed:int
 		private var visualContainer:Sprite
+		private var count:int = 0;
 		
-		public function FeedVisual(feed:Array, photos:Array, timeBetweenFeed:int)
+		public function FeedVisual(feed:Array, photoGroupFeed:Array, timeBetweenFeed:int)
 		{
+			
+		photos = photoGroupFeed
 		this.timeBetweenFeed = timeBetweenFeed
 		visualContainer = new Sprite()
 		addChild(visualContainer)
 		queue = feed		
+		
 		next(null)
 		}
 		
@@ -36,14 +42,26 @@ package com.display
 			
 		}
 		public function update():void{
-			
-				currentVisual.update()
+//			if (currentVisual != null){
+//			if (currentVisual == null){
+//				next(null)
+//			}
+			trace(currentVisual)
+			currentVisual.update()
+//			}
 			
 		}
 		private function next(e:Event):void
 		{
-			
-			currentFeedObject = queue[0]				
+			trace("cccc: " + count%3)
+			trace(photos[0])
+			if (count%3 == 0 && photos[0]!=undefined){
+			currentArray = photos;
+			} else {
+				currentArray = queue;
+			}
+			currentFeedObject = currentArray[0]	
+			trace(currentFeedObject.type)
 			
 			if (currentVisual != null){				
 				currentVisual = null
@@ -63,8 +81,8 @@ package com.display
 				currentVisual = photoVisual
 				
 				
-			} else if (currentFeedObject.type =="status"){
-				var statusVisual:StatusVisual = new StatusVisual(currentFeedObject)
+			} else if (currentFeedObject.type =="status" || currentFeedObject.type == "swf"){
+				var statusVisual:StatusVisual = new StatusVisual(currentFeedObject)				
 				statusVisual.addEventListener("ON_STAGE", createTimer)
 				statusVisual.createVisuals()
 				visualContainer.addChild(statusVisual)
@@ -77,7 +95,7 @@ package com.display
 				currentVisual = questionVisual
 			}
 			else {
-				
+				trace("unrecognized type");
 				createTimer(null)
 			}
 			
@@ -99,6 +117,7 @@ package com.display
 			timer.y = 720 - timer.height- 10
 			timer.x = 1280 - timer.width -10
 			timer.start()
+			count ++;
 		}
 		
 		private function remove(e:Event):void{
@@ -111,7 +130,7 @@ package com.display
 		{
 			event.target.removeEventListener("Timer_Complete", timerComplete)
 			removeChild(TimerCircle(event.target))
-			queue.push(queue.shift())
+			currentArray.push(currentArray.shift())
 				
 			if(currentVisual !=null){
 			currentVisual.addEventListener("OFF_STAGE", remove)

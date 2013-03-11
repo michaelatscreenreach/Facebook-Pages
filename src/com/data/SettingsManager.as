@@ -23,8 +23,10 @@ package com.data
 		public var disallowedList:Array = []
 		public var customMessage:String;		
 		public var refreshTime:String;
-
+		public var dayFilter:String;
 		public var allowUserContent:Boolean;
+		public var splashTime:int = 0;
+		
 		public function SettingsManager()
 		{
 			eventDispatcher = new EventDispatcher()
@@ -38,6 +40,8 @@ package com.data
 //				"&scope=read_stream,user_photos" +
 				"&client_id="+appID+"" +
 				"&client_secret="+appSecret+""
+				
+			trace(url)
 			
 			var authLoader:DataLoader = new DataLoader(url,{name:"auth", onComplete:onAuth, onError:authError, autoDispose:true})
 			
@@ -96,14 +100,21 @@ package com.data
 			facebookID = settings.id
 			numberOfPhotoGroups = settings.numberofphotogroups
 			customMessage = settings.message
-			refreshTime = settings.refreshtime		
-				trace(settings.allowusercontent)
+			refreshTime = settings.refreshtime
+			if (settings.dayfilter == undefined){
+			dayFilter = "0"
+			} else {
+			dayFilter = settings.dayfilter
+			}
+			splashTime = int(settings.splashtimer)
+			trace(settings.allowusercontent)
 			allowUserContent = isBoolean(settings.allowusercontent)
 			
 			
 			
 			if(isBoolean(settings.video) == false){
 				disallowedList.push ("video")
+				disallowedList.push("swf")
 			} 
 			if (isBoolean(settings.link) == false){
 				disallowedList.push("link")

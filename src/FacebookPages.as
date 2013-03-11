@@ -8,6 +8,7 @@ package
 	import com.greensock.loading.DataLoader;
 	import com.greensock.loading.ImageLoader;
 	import com.michael.utils.ResizeText;
+	import com.michael.utils.RotateAroundCenter;
 	import com.requests.facebook.FacebookManager;
 	import com.requests.facebook.FieldObject;
 	import com.requests.facebook.objects.FeedObject;
@@ -16,8 +17,10 @@ package
 	import flash.display.Bitmap;
 	import flash.display.Sprite;
 	import flash.events.Event;
+	import flash.events.TimerEvent;
 	import flash.text.TextField;
 	import flash.text.TextFormat;
+	import flash.utils.Timer;
 
 	[SWF(width="1280", height="720")]
 	public class FacebookPages extends Sprite
@@ -32,15 +35,48 @@ package
 		private var thumb:Bitmap;
 		private var title:TextField;
 		private var currentFormat:TextFormat;
+		private var loadingScreenSprite:*;
+		
+		/**
+		 * Facebook Pages
+		 * Version 1.0.0		 	 
+		 */
+		private static const APP_NAME:String = "Facebook Pages"
+		private static const MAJOR:int=1;
+		private static const MINOR:int=0;
+		private static const BUILD:int=2;
+
+		//splash timer		
+		private var splashTimer:Timer;
 		
 		public function FacebookPages()
 		{
+			trace("--------------------------")
+			trace("* " + APP_NAME)
+			trace("* Version : " +MAJOR+"."+MINOR+"."+BUILD)
+			trace("--------------------------")
+			
 			var am:AssetManager = AssetManager.init()
+			loadingScreenSprite = new Sprite()
 			splashScreen = AssetManager.getAssetByName("SplashScreen")
-			addChild(splashScreen)
+			addChild(loadingScreenSprite)
+			loadingScreenSprite.addChild(splashScreen)						
+			var loadingCircle:Bitmap = AssetManager.getAssetByName("LoadingAnim");
+			loadingCircle.scaleX = loadingCircle.scaleY = 0.8
+			loadingCircle.x = (1280 - loadingCircle.width)/2 - 200
+			loadingCircle.y = 720 - loadingCircle.height - 250
+			loadingScreenSprite.addChild(loadingCircle)
+			var r:RotateAroundCenter = new RotateAroundCenter()
+			r.rotate(loadingCircle,true);
 			settings = new SettingsManager()
 			settings.eventDispatcher.addEventListener("AUTH_SUCCESS", onAuth)
-			settings.authRequest()
+			settings.authRequest()			
+		}
+		
+		protected function onSplashTimerComplete(event:TimerEvent):void
+		{
+			trace("splash")
+			onRequest(null)			
 		}
 		
 		protected function onAuth(event:Event):void
@@ -48,7 +84,8 @@ package
 			settings.eventDispatcher.removeEventListener("AUTH_SUCCESS", onAuth)
 			trace("AUTH")
 			settings.eventDispatcher.addEventListener("SETTINGS_LOADED", onSettingsLoaded)
-			settings.loadSettings()			
+			settings.loadSettings()	
+			
 		}
 		
 		protected function onSettingsLoaded(event:Event):void
@@ -67,19 +104,34 @@ package
 
 		facebookManager.request = request			
 		trace(request)
-		facebookManager.eventDispatcher.addEventListener("REQUEST_LOADED", onRequest)
+//		facebookManager.eventDispatcher.addEventListener("REQUEST_LOADED", onRequest)
 		facebookManager.getRequest(request)
+		splashTimer = new Timer(settings.splashTime*1000, 1)
+		splashTimer.addEventListener(TimerEvent.TIMER_COMPLETE, onSplashTimerComplete)	
+		splashTimer.start()
 			
 		}
 		
 		protected function onRequest(event:Event):void
 		{
-			event.target.removeEventListener("REQUEST_LOADED", onRequest)
-			event.target.removeEventListener(Event.ENTER_FRAME,onRequest)
-			if(facebookManager.feed.length > 0){
-			createDisplay()
+			if (event !=null){
+				event.target.removeEventListener("REQUEST_LOADED", onRequest)
+				event.target.removeEventListener(Event.ENTER_FRAME,onRequest)
+			}
+			
+			
+			if(facebookManager.disallowedFeedItems.indexOf("photoGroup") != -1){
+			if(facebookManager.photoGroupObjects.length > 0){
+				createDisplay()
 			} else {
-			this.addEventListener(Event.ENTER_FRAME, onRequest)
+				this.addEventListener(Event.ENTER_FRAME, onRequest)
+			}
+			} else {
+			if(facebookManager.feed.length > 0){
+				createDisplay()
+			} else {
+				this.addEventListener(Event.ENTER_FRAME, onRequest)
+			}
 			}
 		}
 		
@@ -155,12 +207,13 @@ package
 			
 			header.addChild(customMessage)
 			//create feed
-			feedVisual = new FeedVisual(facebookManager.feed, facebookManager.photos,settings.timeBetweenObjects)
+				trace(facebookManager.feed.length)
+			feedVisual = new FeedVisual(facebookManager.feed, facebookManager.photoGroupObjects,settings.timeBetweenObjects)
 			addChild(feedVisual)
 			facebookManager.started = true			
 			facebookManager.eventDispatcher.addEventListener("UPDATE_DATA", onUpdate)
-			addChild(splashScreen)
-			TweenMax.to(splashScreen,2,{alpha:0, onComplete:function remove():void{removeChild(splashScreen)}});
+			addChild(loadingScreenSprite)
+			TweenMax.to(splashScreen,0,{alpha:0, onComplete:function remove():void{removeChild(loadingScreenSprite)}});
 
 
 			

@@ -1,6 +1,7 @@
 package com.requests.facebook.objects
 {
 	import com.adobe.serialization.json.*;
+	import com.adobe.utils.DateUtil;
 	import com.data.SettingsManager;
 	import com.greensock.events.LoaderEvent;
 	import com.greensock.loading.DataLoader;
@@ -8,6 +9,7 @@ package com.requests.facebook.objects
 	import com.requests.auth.OAuthToken;
 	
 	import flash.display.Bitmap;
+	import flash.display.Loader;
 	import flash.events.Event;
 	import flash.events.EventDispatcher;
 	import flash.events.IOErrorEvent;
@@ -23,11 +25,11 @@ package com.requests.facebook.objects
 		public var comments:Array
 		public var noOfLikes:int
 		public var id:String
-		public var created_time:String
+		public var created_time:Date
 		public var poll:Poll
 		public var photoGroup:PhotoGroup
 		public var photo:String		
-		public var photoData:Bitmap
+		public var photoData:ByteArray
 		public var scroll:int
 		
 		//attributes
@@ -71,7 +73,13 @@ package com.requests.facebook.objects
 			if (data.id !=null){
 				this.id = data.id
 			}
-			if (data.created_time !=null){ this.created_time = data.created_time }
+			if (data.created_time !=null){ 
+//				var tCT:String = data.created_time.split("-").join("/");
+//				var tCT:String = data.created_time.split("T").join(" ");
+//				tCT = tCT.substr(0, tCT.length - 5);
+//				trace(tCT)
+				this.created_time = DateUtil.parseW3CDTF(data.created_time)
+			}
 			if (data.photoGroup !=null){ this.photoGroup = data.photoGroup }
 			
 			if (data.type == "question"){				
@@ -104,14 +112,15 @@ package com.requests.facebook.objects
 			facebookName = null
 		}
 		
-		public function errorHandler(e:IOErrorEvent):void{			
+		public function errorHandler(e:LoaderEvent):void{			
 			e.target.dispose(true)
 		}
 		
 		public function parseFrom(e:LoaderEvent):void{
 			var photoData:Object = JSON.decode(e.target.content)			
 			photo = photoData.picture.data.url
-			var photoDataLoader:ImageLoader = new ImageLoader(photo, {name:"photo", width:photoWidth, height:photoHeight, scaleMode:"proportionalOutside", onComplete:photoBytesLoaded, autoDispose:true, onError:errorHandler})				
+			var photoDataLoader:DataLoader = new DataLoader(photo, {name:"photo", format:"binary", onComplete:photoBytesLoaded, autoDispose:true, onError:errorHandler})
+//			var photoDataLoader:DataLoader = new DataLoader(photo, {name:"photo", width:photoWidth, height:photoHeight, scaleMode:"proportionalOutside", onComplete:photoBytesLoaded, autoDispose:true, onError:errorHandler})
 			photoDataLoader.load()
 //			e.target.dispose(true)	
 			
@@ -123,15 +132,16 @@ package com.requests.facebook.objects
 		public function parsePhoto(e:LoaderEvent):void{
 			var photoData:Object = JSON.decode(e.target.content)
 				photo = photoData.picture.data.url
-				var photoDataLoader:ImageLoader = new ImageLoader(photo, {name:"photo", width:photoWidth, height:photoHeight, scaleMode:"proportionalOutside", onComplete:photoBytesLoaded, autoDispose:true,onError:errorHandler})				
+				var photoDataLoader:DataLoader = new DataLoader(photo, {name:"photo", format:"binary", onComplete:photoBytesLoaded, autoDispose:true, onError:errorHandler})
+//				var photoDataLoader:ImageLoader = new ImageLoader(photo, {name:"photo", width:photoWidth, height:photoHeight, scaleMode:"proportionalOutside", onComplete:photoBytesLoaded, autoDispose:true,onError:errorHandler})				
 				photoDataLoader.load()
 //				e.target.dispose(true)
 				
 					
 		}
 		private function photoBytesLoaded(e:LoaderEvent):void{
-			
-			photoData = e.target.rawContent
+//			trace()
+			photoData = DataLoader(e.target).content
 //			e.target.dispose(true)
 			dispatchEvent(new Event("FEED_OBJECT_LOADED"))
 				
