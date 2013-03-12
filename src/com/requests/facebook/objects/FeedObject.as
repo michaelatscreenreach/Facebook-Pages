@@ -3,6 +3,7 @@ package com.requests.facebook.objects
 	import com.adobe.serialization.json.*;
 	import com.adobe.utils.DateUtil;
 	import com.data.SettingsManager;
+	import com.google.analytics.utils.URL;
 	import com.greensock.events.LoaderEvent;
 	import com.greensock.loading.DataLoader;
 	import com.greensock.loading.ImageLoader;
@@ -13,6 +14,9 @@ package com.requests.facebook.objects
 	import flash.events.Event;
 	import flash.events.EventDispatcher;
 	import flash.events.IOErrorEvent;
+	import flash.net.URLLoader;
+	import flash.net.URLLoaderDataFormat;
+	import flash.net.URLRequest;
 	import flash.utils.ByteArray;
 	
 	
@@ -43,6 +47,7 @@ package com.requests.facebook.objects
 		}
 		
 		public function create(data:Object, authToken:OAuthToken, facebookName:String, scrollTime:int):void{
+			var photoLoader:URLLoader
 			this.scroll = scrollTime
 			if (data.type != null){ this.type = data.type } 
 			if (data.message != null){
@@ -84,13 +89,16 @@ package com.requests.facebook.objects
 			
 			if (data.type == "question"){				
 				var url:String = "https://graph.facebook.com/" + data.object_id + "?access_token="+authToken.code				
-				var pollLoader:DataLoader = new DataLoader(url, {name:"poll", onComplete:parsePoll, onError:errorHandler, autoDispose:true})
-				pollLoader.load()									
+				var pollLoader:URLLoader = new URLLoader()				
+				pollLoader.addEventListener(Event.COMPLETE, parsePoll)
+				pollLoader.load(new URLRequest(url))
 			} else if (data.type == "photo") {
 							
-				var photoURL:String = "https://graph.facebook.com/" + data.object_id +"?fields=picture.width(370).height(370)" + "&access_token="+authToken.code				
-				var photoLoader:DataLoader = new DataLoader(photoURL, {name:"hi", onComplete:parsePhoto, onError:errorHandler, autoDispose:true})
-				photoLoader.load()									
+				var photoURL:String = "https://graph.facebook.com/" + data.object_id +"?fields=picture.width(370).height(370)" + "&access_token="+authToken.code	
+				photoLoader = new URLLoader()
+				photoLoader.dataFormat = URLLoaderDataFormat.BINARY
+				photoLoader.addEventListener(Event.COMPLETE, parsePhoto)
+				photoLoader.load(new URLRequest(photoURL))								
 			
 			} else if (data.type == "status"){
 				if(data.application != undefined){
@@ -99,10 +107,11 @@ package com.requests.facebook.objects
 				if(String(data.story).indexOf("\" on their own") != -1){
 					message = facebookName + " commented " + message
 				}
-				var fromURL:String = "https://graph.facebook.com/" + data.from.id +"?fields=picture.width(370).height(370)&access_token="+authToken.code	 			
-				var fromLoader:DataLoader = new DataLoader(fromURL, {name:"from", onComplete:parseFrom,onError:errorHandler, autoDispose:true})
-				fromLoader.load()		
-				
+				var fromURL:String = "https://graph.facebook.com/" + data.from.id +"?fields=picture.width(370).height(370)&access_token="+authToken.code									
+				photoLoader = new URLLoader()
+				photoLoader.dataFormat = URLLoaderDataFormat.BINARY
+				photoLoader.addEventListener(Event.COMPLETE, parseFrom)
+				photoLoader.load(new URLRequest(fromURL))				
 				
 			} else {
 				
@@ -110,48 +119,51 @@ package com.requests.facebook.objects
 			 
 			}
 			facebookName = null
-		}
+		
+			}
 		
 		public function errorHandler(e:LoaderEvent):void{			
 			e.target.dispose(true)
 		}
 		
-		public function parseFrom(e:LoaderEvent):void{
+		public function parseFrom(e:Event):void{
+			e.target.removeEventListener(Event.COMPLETE, parseFrom)
 			var photoData:Object = JSON.decode(e.target.content)			
 			photo = photoData.picture.data.url
-			var photoDataLoader:DataLoader = new DataLoader(photo, {name:"photo", format:"binary", onComplete:photoBytesLoaded, autoDispose:true, onError:errorHandler})
-//			var photoDataLoader:DataLoader = new DataLoader(photo, {name:"photo", width:photoWidth, height:photoHeight, scaleMode:"proportionalOutside", onComplete:photoBytesLoaded, autoDispose:true, onError:errorHandler})
-			photoDataLoader.load()
-//			e.target.dispose(true)	
-			
-				
+			var photoDataLoader:URLLoader = new URLLoader()			
+			photoDataLoader.dataFormat = URLLoaderDataFormat.BINARY
+			photoDataLoader.addEventListener(Event.COMPLETE, photoBytesLoaded)
+			photoDataLoader.load(new URLRequest(photo))
+			e.target.data = null
+//			e.target.dispose(true)			
 			
 		}
-
 		
-		public function parsePhoto(e:LoaderEvent):void{
-			var photoData:Object = JSON.decode(e.target.content)
+		public function parsePhoto(e:Event):void{
+			e.target.removeEventListener(Event.COMPLETE, parsePhoto)
+			var photoData:Object = JSON.decode(e.target.data)
 				photo = photoData.picture.data.url
-				var photoDataLoader:DataLoader = new DataLoader(photo, {name:"photo", format:"binary", onComplete:photoBytesLoaded, autoDispose:true, onError:errorHandler})
-//				var photoDataLoader:ImageLoader = new ImageLoader(photo, {name:"photo", width:photoWidth, height:photoHeight, scaleMode:"proportionalOutside", onComplete:photoBytesLoaded, autoDispose:true,onError:errorHandler})				
-				photoDataLoader.load()
-//				e.target.dispose(true)
+				var photoDataLoader:URLLoader = new URLLoader()
+				photoDataLoader.dataFormat = URLLoaderDataFormat.BINARY
+				photoDataLoader.addEventListener(Event.COMPLETE, photoBytesLoaded)
+				photoDataLoader.load(new URLRequest(photo))
+					
 				
 					
 		}
-		private function photoBytesLoaded(e:LoaderEvent):void{
-//			trace()
-			photoData = DataLoader(e.target).content
-//			e.target.dispose(true)
-			dispatchEvent(new Event("FEED_OBJECT_LOADED"))
-				
-			
+		
+		private function photoBytesLoaded(e:Event):void{
+			photoData = e.target.data
+			dispatchEvent(new Event("FEED_OBJECT_LOADED"))		
 		}
-		public function parsePoll(e:LoaderEvent):void{
-			var jsonData:Object = JSON.decode(e.target.content)					
+		
+		public function parsePoll(e:Event):void{
+			e.target.removeEventListener(Event.COMPLETE, parsePoll)
+			var jsonData:Object = JSON.decode(e.target.data)					
 			poll = new Poll(jsonData)			
 //			e.target.dispose(true)
 			this.dispatchEvent(new Event("FEED_OBJECT_LOADED"))
+			e.target.data = null
 		}
 	}
 }

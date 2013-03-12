@@ -39,12 +39,12 @@ package
 		
 		/**
 		 * Facebook Pages
-		 * Version 1.0.0		 	 
+		 * Version 1.0.3		 	 
 		 */
 		private static const APP_NAME:String = "Facebook Pages"
 		private static const MAJOR:int=1;
 		private static const MINOR:int=0;
-		private static const BUILD:int=2;
+		private static const BUILD:int=3;
 
 		//splash timer		
 		private var splashTimer:Timer;
@@ -94,7 +94,7 @@ package
 		
 		var request:String = "https://graph.facebook.com/"+settings.facebookID+"" +		
 //		var request:String = "https://graph.facebook.com/the-buck-inn" +		
-			"/?fields=feed.limit("+settings.feedLimit+").fields(type,likes,story,status_type,message,picture,object_id,application, from)" +
+			"/?fields=feed.limit("+settings.feedLimit+").fields(type,story,status_type,message,picture,object_id,application, from)" +
 //			"/?fields=feed.limit(100).fields(type,likes,story,status_type,message,picture,object_id,application, from)" +			
 
 			",photos.type(uploaded).limit(20).fields(images,comments)" +

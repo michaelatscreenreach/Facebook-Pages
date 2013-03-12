@@ -11,7 +11,10 @@ package com.requests.facebook
 	import com.requests.facebook.objects.PhotoGroup;
 	import com.requests.facebook.objects.PollOption;
 	
+	import flash.display.Loader;
 	import flash.events.*;
+	import flash.net.URLLoader;
+	import flash.net.URLRequest;
 	import flash.utils.Timer;
 
 	public class FacebookManager
@@ -50,13 +53,28 @@ package com.requests.facebook
 		}		
 		
 		public function getRequest(request:String):void{
-			var requestLoader:DataLoader = new DataLoader(request, {name:"request", onComplete:parseRequest, autoDispose:true, allowMalformedURL:true})
-			requestLoader.load()
+			
+			var requestLoader:URLLoader = new URLLoader
+			requestLoader.addEventListener(Event.COMPLETE, parseRequest)			
+			requestLoader.addEventListener(IOErrorEvent.IO_ERROR, onIOError)
+			requestLoader.load(new URLRequest(request))
+			
+			
+//			= new DataLoader(request, {name:"request", onComplete:parseRequest, autoDispose:true, allowMalformedURL:true})
+//			requestLoader.load()
 			request = null
 		}
 		
-		public function parseRequest(e:LoaderEvent):void{
-			var jsonData:Object = JSON.decode(e.target.content)			
+		protected function onIOError(event:Event):void
+		{
+			trace(event)
+		}
+		
+		public function parseRequest(e:Event):void{
+			
+			e.target.removeEventListener(Event.COMPLETE, parseRequest)
+			e.target.removeEventListener(IOErrorEvent.IO_ERROR, onIOError)
+			var jsonData:Object = JSON.decode(e.target.data)			
 			
 			if (jsonData.cover !=undefined){
 				cover = new Cover(jsonData.cover)				
@@ -149,9 +167,10 @@ package com.requests.facebook
 			eventDispatcher.dispatchEvent(new Event("UPDATE_DATA"))
 			}
 			
-			e.target.dispose(true)			
 			jsonData = null
+			e.target.data =null
 			addTimer();
+			
 			
 			
 				

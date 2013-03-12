@@ -6,10 +6,12 @@ package com.requests.facebook.objects
 	import com.greensock.loading.ImageLoader;
 	
 	import flash.display.Bitmap;
+	import flash.display.Loader;
 	import flash.events.Event;
 	import flash.events.EventDispatcher;
 	import flash.events.IOErrorEvent;
 	import flash.net.URLLoader;
+	import flash.net.URLLoaderDataFormat;
 	import flash.net.URLRequest;
 	import flash.utils.ByteArray;
 
@@ -37,10 +39,11 @@ package com.requests.facebook.objects
 
 			if (data.images !=null && data.images != undefined){
 				this.photoURL = data.images[0].source
-				var photoLoader:DataLoader = new DataLoader(photoURL, {name:"photo",format:"binary", onError:updateError,onComplete:photoLoaded, autoDispose:true});
+				var photoLoader:URLLoader = new URLLoader()
+				photoLoader.dataFormat = URLLoaderDataFormat.BINARY
+				photoLoader.addEventListener(Event.COMPLETE, photoLoaded)
+				photoLoader.load(new URLRequest(photoURL))				
 
-//				var photoLoader:ImageLoader = new ImageLoader(photoURL, {name:"photo", width:360, height:360, scaleMode:"proportionalOutside", onError:updateError,onComplete:photoLoaded, autoDispose:true});
-				photoLoader.load()	
 					
 			}	else {
 				throw new Error("no images")
@@ -62,8 +65,11 @@ package com.requests.facebook.objects
 		}
 		
 		private function photoLoaded(e:Event):void{
-			photo = DataLoader(e.target).content
+			e.target.removeEventListener(Event.COMPLETE, photoLoaded)
+			photo = e.target.data
+			e.target.data = null
 			update();	
+			
 
 			
 		}

@@ -7,6 +7,8 @@ package com.data
 	
 	import flash.events.*;
 	import flash.external.ExternalInterface;
+	import flash.net.URLLoader;
+	import flash.net.URLRequest;
 	import flash.net.URLVariables;
 	import flash.system.Capabilities;
 	
@@ -85,16 +87,29 @@ package com.data
 				//				throw new Error("No Settings File")
 			}
 			
-			var settingsLoader:DataLoader = new DataLoader(settingsURL, {name:"settings", onComplete:parseSettings, autoDispose:true})
-			settingsLoader.load()
+			var settingsLoader:URLLoader = new URLLoader()
+			settingsLoader.addEventListener(Event.COMPLETE, parseSettings)
+			settingsLoader.addEventListener(IOErrorEvent.IO_ERROR, onIOError)
+			settingsLoader.load(new URLRequest(settingsURL))
+
+//			= new DataLoader(settingsURL, {name:"settings", onComplete:parseSettings, autoDispose:true})
+//			settingsLoader.load()
+		}
+		
+		protected function onIOError(event:IOErrorEvent):void
+		{
+			trace(event)
 		}
 		private function isBoolean(string:String):Boolean{
 			var isBool:Boolean =	string  == "true" ? true : false;						
 			return isBool
 		}
-		private function parseSettings(e:LoaderEvent):void{
-			trace(e.target.content)
-			var settings:Object = JSON.decode(e.target.content)
+		private function parseSettings(e:Event):void{
+			e.target.removeEventListener(Event.COMPLETE, parseSettings)
+			e.target.removeEventListener(IOErrorEvent.IO_ERROR, onIOError)
+				
+			trace(e.target.data)
+			var settings:Object = JSON.decode(e.target.data)
 			settings = settings.settings			
 			timeBetweenObjects = settings.timebetweenobjects
 			facebookID = settings.id
