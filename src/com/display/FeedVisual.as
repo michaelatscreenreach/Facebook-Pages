@@ -46,22 +46,22 @@ package com.display
 //			if (currentVisual == null){
 //				next(null)
 //			}
-			trace(currentVisual)
+//			trace(currentVisual)
 			currentVisual.update()
 //			}
 			
 		}
 		private function next(e:Event):void
 		{
-			trace("cccc: " + count%3)
-			trace(photos[0])
+			
+			
 			if (count%3 == 0 && photos[0]!=undefined){
 			currentArray = photos;
 			} else {
 				currentArray = queue;
 			}
 			currentFeedObject = currentArray[0]	
-			trace(currentFeedObject.type)
+		
 			
 			if (currentVisual != null){				
 				currentVisual = null
@@ -121,7 +121,7 @@ package com.display
 		}
 		
 		private function remove(e:Event):void{
-			e.target.removeEventListener("OFF_STAGE", next)			
+			e.target.removeEventListener("OFF_STAGE", remove)			
 			visualContainer.removeChild(currentVisual)		
 			next(null)
 		}

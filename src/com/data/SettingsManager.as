@@ -45,17 +45,19 @@ package com.data
 				
 			trace(url)
 			
-			var authLoader:DataLoader = new DataLoader(url,{name:"auth", onComplete:onAuth, onError:authError, autoDispose:true})
+			var authLoader:URLLoader = new URLLoader()
+			authLoader.addEventListener(Event.COMPLETE, onAuth)
+			authLoader.load(new URLRequest(url))			
 			
-			authLoader.load()
 		}
 		
-		private function authError(e:LoaderEvent):void{
-			trace("ERROR OCURRED WITH " + e.target + ": " + e.text);
-		}
+//		private function authError(e:Event):void{
+//			trace("ERROR OCURRED WITH " + e.target + ": " + e.text);
+//		}
 		
-		private function onAuth(e:LoaderEvent):void{
-			var dataString:String = DataLoader(e.target).content
+		private function onAuth(e:Event):void{
+			e.target.removeEventListener(Event.COMPLETE,onAuth)
+			var dataString:String = e.target.data
 			dataString = dataString.replace("access_token=", "")
 			//create authToken Object
 			authToken = new OAuthToken(dataString)

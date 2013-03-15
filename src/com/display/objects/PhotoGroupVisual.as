@@ -171,9 +171,10 @@ package com.display.objects
 			images.push(photoContainer)
 		}
 		
-		protected function onPhotoLoaded(event:Event):void
+		protected function onPhotoLoaded(e:Event):void
 		{
-			DisplayUtils.fitIntoRect(event.target.content, new Rectangle(0,0,photoWidth,photoHeight))
+			e.target.removeEventListener(Event.COMPLETE, onPhotoLoaded)
+			DisplayUtils.fitIntoRect(e.target.content, new Rectangle(0,0,photoWidth,photoHeight))
 		}
 		
 		

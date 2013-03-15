@@ -126,8 +126,9 @@ package com.display.objects
 			animateIn()
 		}
 		
-		protected function onPhotoLoaded(event:Event):void
+		protected function onPhotoLoaded(e:Event):void
 		{			
+			e.target.removeEventListener(Event.COMPLETE, onPhotoLoaded)
 			DisplayUtils.fitIntoRect(photoLoader.content, new Rectangle(0,0, photoWidth, photoHeight))			
 		}
 		
@@ -155,7 +156,7 @@ package com.display.objects
 		{
 //			Tue Feb 26 06:15:44 GMT+0000 2013
 			
-			trace(created_time.toLocaleString())
+//			trace(created_time.toLocaleString())
 			
 			var timeDisplay:String = created_time.toTimeString().substr(0, 5)
 			var dateDisplay:String = " - " + created_time.date +"/" +(created_time.monthUTC+1)+"/"+created_time.fullYear

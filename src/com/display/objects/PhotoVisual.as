@@ -148,10 +148,10 @@ package com.display.objects
 			
 		}
 		
-		protected function onPhotoLoaded(event:Event):void
+		protected function onPhotoLoaded(e:Event):void
 		{
-			
-		DisplayUtils.fitIntoRect(photoLoader.content, new Rectangle(0,0, photoWidth, photoHeight))
+			e.target.removeEventListener(Event.COMPLETE, onPhotoLoaded)
+			DisplayUtils.fitIntoRect(photoLoader.content, new Rectangle(0,0, photoWidth, photoHeight))
 
 		}
 		

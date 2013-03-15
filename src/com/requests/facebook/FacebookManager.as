@@ -2,6 +2,8 @@ package com.requests.facebook
 {
 	import com.adobe.serialization.json.*;
 	import com.data.SettingsManager;
+	import com.errors.ErrorList;
+	import com.errors.ErrorScreen;
 	import com.greensock.events.LoaderEvent;
 	import com.greensock.loading.*;
 	import com.requests.auth.OAuthToken;
@@ -33,11 +35,12 @@ package com.requests.facebook
 		public var request:String
 		public var refreshTime:String
 		public var started:Boolean = false;
-		
-
 		private var dataPhotosLength:uint;
-
 		public var photoGroupObjects:Array
+		//handling feed items
+		private var noOfItemsReturned:int
+		private var noOffeedItemsProcessed:int = 0;
+		private var noOfDisallowedFeedItems:int = 0;
 		
 		
 		public function FacebookManager(auth:OAuthToken, disallowedFeedItemsList:Array, settings:SettingsManager)
@@ -68,6 +71,15 @@ package com.requests.facebook
 		protected function onIOError(event:Event):void
 		{
 			trace(event)
+			var jsonData:Object = JSON.decode(event.target.data)
+			trace(jsonData.error.code)
+			
+			switch(jsonData.error.code){
+				case 803:
+				trace("requested facebook page does not exist")
+				break;
+				
+			}
 		}
 		
 		public function parseRequest(e:Event):void{
@@ -98,8 +110,12 @@ package com.requests.facebook
 			
 			if (jsonData.feed !=null && jsonData.feed !=undefined){
 				
+				trace("* NUMBER OF FEED ITEMS: " + jsonData.feed.data.length)
+				noOfItemsReturned = jsonData.feed.data.length
 				for each (var fo:Object in jsonData.feed.data) 
 				{
+					
+					
 					var allowed:Boolean = true
 						
 						
@@ -135,10 +151,15 @@ package com.requests.facebook
 					feedObject.addEventListener("FEED_OBJECT_LOADED", addFeedObject)					
 					feedObject.create(fo, authToken,name, settings.timeBetweenObjects)
 					}
+					} else {
+					noOfDisallowedFeedItems ++;					
 					}
 				}
+			
+			trace(noOfDisallowedFeedItems)
 				
-				
+			} else {
+				trace("NO FEED")
 			}
 			
 			if (jsonData.photos !=null){				
@@ -242,13 +263,15 @@ package com.requests.facebook
 		
 		protected function addPhotoGroupObject(e:Event):void
 		{
-			var feedObject:FeedObject = FeedObject(e.target)
-				
+			e.target.removeEventListener("FEED_OBJECT_LOADED", addPhotoGroupObject)
+			var feedObject:FeedObject = FeedObject(e.target)				
 			photoGroupObjects.push(feedObject)			
 		}
 		
 		protected function addFeedObject(e:Event):void
 		{		
+			
+			
 			e.target.removeEventListener("FEED_OBJECT_LOADED", addFeedObject)
 			var feedObject:FeedObject = FeedObject(e.target)
 			var compareDate:Date = new Date()
@@ -256,9 +279,14 @@ package com.requests.facebook
 			
 			if (settings.dayFilter != "0" && settings.dayFilter != ""){
 				compareDate.setDate(compareDate.date-Number(settings.dayFilter))
-				trace(trace(compareDate))
-			
+
 			if (feedObject.created_time < compareDate){
+			noOfDisallowedFeedItems ++;
+			trace("* Disallowed Feed Items: " + noOfDisallowedFeedItems)			
+			
+			if (noOfItemsReturned <= noOfDisallowedFeedItems + noOffeedItemsProcessed){ 
+			this.eventDispatcher.dispatchEvent(new Event("NO_FEED"))
+			}
 			return
 			}
 			}
@@ -286,5 +314,7 @@ package com.requests.facebook
 			feed.push(feedObject)
 			feed.sortOn("created_time",Array.NUMERIC | Array.DESCENDING)
 		}
+		
+		
 	}
 }

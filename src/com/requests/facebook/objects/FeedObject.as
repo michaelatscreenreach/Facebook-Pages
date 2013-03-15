@@ -128,7 +128,7 @@ package com.requests.facebook.objects
 		
 		public function parseFrom(e:Event):void{
 			e.target.removeEventListener(Event.COMPLETE, parseFrom)
-			var photoData:Object = JSON.decode(e.target.content)			
+			var photoData:Object = JSON.decode(e.target.data)			
 			photo = photoData.picture.data.url
 			var photoDataLoader:URLLoader = new URLLoader()			
 			photoDataLoader.dataFormat = URLLoaderDataFormat.BINARY
@@ -153,6 +153,7 @@ package com.requests.facebook.objects
 		}
 		
 		private function photoBytesLoaded(e:Event):void{
+			e.target.removeEventListener(Event.COMPLETE, photoBytesLoaded)
 			photoData = e.target.data
 			dispatchEvent(new Event("FEED_OBJECT_LOADED"))		
 		}

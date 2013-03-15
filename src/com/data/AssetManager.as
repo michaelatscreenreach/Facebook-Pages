@@ -19,6 +19,11 @@ package com.data
 		[Embed(source="/../ASSETS/loadingscreen.png")] private var SplashScreen:Class;
 		[Embed(source="/../ASSETS/line.png")] private var Line:Class;
 		[Embed(source="/../ASSETS/loadingAnim.png")]	private var LoadingAnim:Class;
+		
+		//error screens
+		[Embed(source="/../ASSETS/error screens/nocontentUSERS.jpg")]	private var ERROR_100:Class;
+		[Embed(source="/../ASSETS/error screens/nocontentMASTER.jpg")]	private var ERROR_101:Class;
+		
 
 
 
@@ -37,6 +42,8 @@ package com.data
 		public static var headerFormat:TextFormat = new TextFormat("myriad", 51, 0xFFFFFF, null,null,null,null,null,"left", null, null, null)
 		public static var headerNoCheckinFormat:TextFormat = new TextFormat("myriad", 62, 0xFFFFFF, null,null,null,null,null,"left", null, null, null)
 		public static var likesFormat:TextFormat = new TextFormat("myriad", 70, 0xFFFFFF, null,null,null,null,null,"left", null, null, null)
+		public static var errorFormat:TextFormat = new TextFormat("myriad", 70, 0xFFFFFF, null,null,null,null,null,"left", null, null, null)
+
 
 			
 		public function AssetManager()

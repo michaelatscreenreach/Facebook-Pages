@@ -3,6 +3,8 @@ package
 	import com.data.AssetManager;
 	import com.data.SettingsManager;
 	import com.display.FeedVisual;
+	import com.errors.ErrorList;
+	import com.errors.ErrorScreen;
 	import com.graphics.TimerCircle;
 	import com.greensock.TweenMax;
 	import com.greensock.loading.DataLoader;
@@ -26,6 +28,13 @@ package
 	public class FacebookPages extends Sprite
 	{
 	
+		/**
+		 * 
+		 * Facebook Pages
+		 * Version 1.0.5
+		 * 		 	 
+		 */
+		
 		private var settings:SettingsManager;
 		private var facebookManager:FacebookManager;
 		private var bgContainer:Sprite;
@@ -35,16 +44,12 @@ package
 		private var thumb:Bitmap;
 		private var title:TextField;
 		private var currentFormat:TextFormat;
-		private var loadingScreenSprite:*;
+		private var loadingScreenSprite:*;	
 		
-		/**
-		 * Facebook Pages
-		 * Version 1.0.3		 	 
-		 */
 		private static const APP_NAME:String = "Facebook Pages"
 		private static const MAJOR:int=1;
 		private static const MINOR:int=0;
-		private static const BUILD:int=3;
+		private static const BUILD:int=5;
 
 		//splash timer		
 		private var splashTimer:Timer;
@@ -61,28 +66,24 @@ package
 			splashScreen = AssetManager.getAssetByName("SplashScreen")
 			addChild(loadingScreenSprite)
 			loadingScreenSprite.addChild(splashScreen)						
-			var loadingCircle:Bitmap = AssetManager.getAssetByName("LoadingAnim");
-			loadingCircle.scaleX = loadingCircle.scaleY = 0.8
-			loadingCircle.x = (1280 - loadingCircle.width)/2 - 200
-			loadingCircle.y = 720 - loadingCircle.height - 250
-			loadingScreenSprite.addChild(loadingCircle)
+			var loadingCircle:Bitmap = AssetManager.getAssetByName("LoadingAnim");			
 			var r:RotateAroundCenter = new RotateAroundCenter()
-			r.rotate(loadingCircle,true);
+			loadingScreenSprite.addChild(r)
+			r.rotate(loadingCircle);
+			r.scaleX = r.scaleY = 0.8
+			r.x = (1280)/2 - 200
+			r.y = 720 - r.height - 200
 			settings = new SettingsManager()
 			settings.eventDispatcher.addEventListener("AUTH_SUCCESS", onAuth)
 			settings.authRequest()			
 		}
 		
-		protected function onSplashTimerComplete(event:TimerEvent):void
-		{
-			trace("splash")
-			onRequest(null)			
-		}
+		
 		
 		protected function onAuth(event:Event):void
 		{
 			settings.eventDispatcher.removeEventListener("AUTH_SUCCESS", onAuth)
-			trace("AUTH")
+			trace("AUTH Successful")
 			settings.eventDispatcher.addEventListener("SETTINGS_LOADED", onSettingsLoaded)
 			settings.loadSettings()	
 			
@@ -90,26 +91,44 @@ package
 		
 		protected function onSettingsLoaded(event:Event):void
 		{
-		facebookManager = new FacebookManager(settings.authToken, settings.disallowedList, settings)			
+		facebookManager = new FacebookManager(settings.authToken, settings.disallowedList, settings)	
 		
-		var request:String = "https://graph.facebook.com/"+settings.facebookID+"" +		
-//		var request:String = "https://graph.facebook.com/the-buck-inn" +		
+			settings.eventDispatcher.removeEventListener("SETTINGS_LOADED", onSettingsLoaded)
+			var request:String = "https://graph.facebook.com/"+settings.facebookID+"" +		
 			"/?fields=feed.limit("+settings.feedLimit+").fields(type,story,status_type,message,picture,object_id,application, from)" +
-//			"/?fields=feed.limit(100).fields(type,likes,story,status_type,message,picture,object_id,application, from)" +			
-
 			",photos.type(uploaded).limit(20).fields(images,comments)" +
 			",cover,name,likes,location"+
 //			"&limit=20"+
 			"&access_token="+settings.authToken.code		
 
-		facebookManager.request = request			
-		trace(request)
-//		facebookManager.eventDispatcher.addEventListener("REQUEST_LOADED", onRequest)
-		facebookManager.getRequest(request)
-		splashTimer = new Timer(settings.splashTime*1000, 1)
-		splashTimer.addEventListener(TimerEvent.TIMER_COMPLETE, onSplashTimerComplete)	
-		splashTimer.start()
+			facebookManager.request = request			
+			trace("* facebook request: " +request)
+			facebookManager.eventDispatcher.addEventListener("NO_FEED", noFeed)
+			facebookManager.getRequest(request)
+			splashTimer = new Timer(settings.splashTime*1000, 1)
+			splashTimer.addEventListener(TimerEvent.TIMER_COMPLETE, onSplashTimerComplete)	
+			splashTimer.start()
 			
+		}
+		
+		private function noFeed(e:Event):void
+		{
+			e.target.removeEventListener("NO_FEED", noFeed)
+			this.removeEventListener(Event.ENTER_FRAME, onRequest)
+			
+			var errorScreen:ErrorScreen = new ErrorScreen()
+			if (settings.allowUserContent == true){				
+				errorScreen.displayError(ErrorList.NO_POSTS_USER_CONTENT,{facebookName:facebookManager.name})
+			} else if (settings.allowUserContent == false){
+				errorScreen.displayError(ErrorList.NO_POSTS_MASTER,{facebookName:facebookManager.name})
+			}
+			addChild(errorScreen)
+		}
+		
+		protected function onSplashTimerComplete(event:TimerEvent):void
+		{		
+			splashTimer.removeEventListener(TimerEvent.TIMER_COMPLETE, onSplashTimerComplete)	
+			onRequest(null)			
 		}
 		
 		protected function onRequest(event:Event):void
@@ -206,8 +225,7 @@ package
 			customMessage. y = stage.stageHeight - customMessage.height -10
 			
 			header.addChild(customMessage)
-			//create feed
-				trace(facebookManager.feed.length)
+			//create feed				
 			feedVisual = new FeedVisual(facebookManager.feed, facebookManager.photoGroupObjects,settings.timeBetweenObjects)
 			addChild(feedVisual)
 			facebookManager.started = true			
@@ -222,11 +240,11 @@ package
 		
 		protected function onUpdate(e:Event):void
 		{
+			facebookManager.eventDispatcher.removeEventListener("UPDATE_DATA", onUpdate)
 			likesText.text = facebookManager.likes.toString().replace( /\d{1,3}(?=(\d{3})+(?!\d))/g , "$&,")
 			thumb.x = likesText.x - thumb.width -20
 			thumb.y = (100 - thumb.width)/2
-			ResizeText.resize(title, (1280 - title.x) - (1280 - thumb.x), currentFormat) 
-				
+			ResizeText.resize(title, (1280 - title.x) - (1280 - thumb.x), currentFormat)				
 			feedVisual.update()
 				
 			
