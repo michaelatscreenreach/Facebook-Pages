@@ -66,7 +66,7 @@ package com.display
 			if (currentVisual != null){				
 				currentVisual = null
 			}
-			
+			try{
 			if (currentFeedObject.type == "photoGroup"){
 				var photoGroupVisual:PhotoGroupVisual = new PhotoGroupVisual(currentFeedObject)					
 				photoGroupVisual.addEventListener("ON_STAGE", createTimer)
@@ -97,6 +97,9 @@ package com.display
 			else {
 				trace("unrecognized type");
 				createTimer(null)
+			}
+			} catch (e:Event){
+//				this.dispatchEvent("NO_FEED");
 			}
 			
 			

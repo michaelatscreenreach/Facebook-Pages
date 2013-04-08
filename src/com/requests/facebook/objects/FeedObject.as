@@ -79,10 +79,6 @@ package com.requests.facebook.objects
 				this.id = data.id
 			}
 			if (data.created_time !=null){ 
-//				var tCT:String = data.created_time.split("-").join("/");
-//				var tCT:String = data.created_time.split("T").join(" ");
-//				tCT = tCT.substr(0, tCT.length - 5);
-//				trace(tCT)
 				this.created_time = DateUtil.parseW3CDTF(data.created_time)
 			}
 			if (data.photoGroup !=null){ this.photoGroup = data.photoGroup }
@@ -101,9 +97,7 @@ package com.requests.facebook.objects
 				photoLoader.load(new URLRequest(photoURL))								
 			
 			} else if (data.type == "status"){
-				if(data.application != undefined){
-				return;
-				}
+				
 				if(String(data.story).indexOf("\" on their own") != -1){
 					message = facebookName + " commented " + message
 				}
@@ -134,7 +128,7 @@ package com.requests.facebook.objects
 			photoDataLoader.dataFormat = URLLoaderDataFormat.BINARY
 			photoDataLoader.addEventListener(Event.COMPLETE, photoBytesLoaded)
 			photoDataLoader.load(new URLRequest(photo))
-			e.target.data = null
+//			e.target.data = null
 //			e.target.dispose(true)			
 			
 		}
@@ -146,13 +140,23 @@ package com.requests.facebook.objects
 				var photoDataLoader:URLLoader = new URLLoader()
 				photoDataLoader.dataFormat = URLLoaderDataFormat.BINARY
 				photoDataLoader.addEventListener(Event.COMPLETE, photoBytesLoaded)
+				photoDataLoader.addEventListener(IOErrorEvent.IO_ERROR, onErrorLoadingPhoto)
 				photoDataLoader.load(new URLRequest(photo))
 					
 				
 					
 		}
 		
+		protected function onErrorLoadingPhoto(event:IOErrorEvent):void
+		{
+			trace(event.text)
+		}		
+		
+		
 		private function photoBytesLoaded(e:Event):void{
+			if (this.message.indexOf("word!") != -1){
+				trace ("match")
+			}
 			e.target.removeEventListener(Event.COMPLETE, photoBytesLoaded)
 			photoData = e.target.data
 			dispatchEvent(new Event("FEED_OBJECT_LOADED"))		

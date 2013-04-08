@@ -39,9 +39,9 @@ package com.requests.facebook
 		public var photoGroupObjects:Array
 		//handling feed items
 		private var noOfItemsReturned:int
-		private var noOffeedItemsProcessed:int = 0;
+		private var noOfFeedItemsProcessed:int = 0;
 		private var noOfDisallowedFeedItems:int = 0;
-		
+		private var initialPull:Boolean = true;	
 		
 		public function FacebookManager(auth:OAuthToken, disallowedFeedItemsList:Array, settings:SettingsManager)
 		{	
@@ -108,58 +108,28 @@ package com.requests.facebook
 			}
 			
 			
-			if (jsonData.feed !=null && jsonData.feed !=undefined){
+			if (jsonData.feed !=undefined || jsonData.posts !=undefined){
 				
-				trace("* NUMBER OF FEED ITEMS: " + jsonData.feed.data.length)
-				noOfItemsReturned = jsonData.feed.data.length
-				for each (var fo:Object in jsonData.feed.data) 
+				
+				var itemList:Array
+					
+				if (settings.allowUserContent == true){
+				noOfItemsReturned = jsonData.feed.data.length;
+				itemList = jsonData.feed.data
+				} else {
+					noOfItemsReturned = jsonData.posts.data.length;
+					itemList = jsonData.posts.data
+				}				
+				
+				trace("* NUMBER OF FEED ITEMS: " + noOfItemsReturned)
+				
+				for each (var fo:Object in itemList) 
 				{
-					
-					
-					var allowed:Boolean = true
-						
-						
-					for each (var disallowedFeed:String in disallowedFeedItems) 
-					{
-//						trace(settings.allowUserContent)
-						if (fo.type == disallowedFeed){
-						allowed = false
-						} if (!settings.allowUserContent){
-							if (fo.status_type == undefined && fo.from.name!=settings.facebookID){
-								allowed = false
-							}
-						}
-					}
-					if (allowed){
-						var existingFeed:Boolean = false
-						for each (var existingFeedItem:FeedObject in feed) 
-						{
-							if (fo.type != "question"){
-							if (existingFeedItem.id == fo.id){
-								if (fo.likes != undefined){
-									existingFeedItem.noOfLikes = fo.likes.count									
-								} else {
-									existingFeedItem.noOfLikes = 0
-								}						
-								
-								existingFeed = true;
-							}
-							}
-						}
-					if (existingFeed == false){
-					var feedObject:FeedObject = new FeedObject()
-					feedObject.addEventListener("FEED_OBJECT_LOADED", addFeedObject)					
-					feedObject.create(fo, authToken,name, settings.timeBetweenObjects)
-					}
-					} else {
-					noOfDisallowedFeedItems ++;					
-					}
+					parseObject(fo)
 				}
-			
-			trace(noOfDisallowedFeedItems)
-				
 			} else {
 				trace("NO FEED")
+				this.eventDispatcher.dispatchEvent(new Event("NO_FEED"));
 			}
 			
 			if (jsonData.photos !=null){				
@@ -195,6 +165,50 @@ package com.requests.facebook
 			
 			
 				
+		}
+		
+		private function parseObject(fo:Object):void
+		{		
+			
+			var allowed:Boolean = true
+			//					if(fo.application != undefined){						
+			//						allowed = false
+			//					}	
+			
+			for each (var disallowedFeed:String in disallowedFeedItems) 
+			{						
+				if (fo.type == disallowedFeed){
+					allowed = false
+				} if (!settings.allowUserContent){
+					if (fo.status_type == undefined && fo.from.name!=settings.facebookID){
+						allowed = false
+					}
+				}
+			}
+			if (allowed){
+				var existingFeed:Boolean = false
+				for each (var existingFeedItem:FeedObject in feed) 
+				{
+					if (fo.type != "question"){
+						if (existingFeedItem.id == fo.id){
+							if (fo.likes != undefined){
+								existingFeedItem.noOfLikes = fo.likes.count									
+							} else {
+								existingFeedItem.noOfLikes = 0
+							}						
+							
+							existingFeed = true;
+						}
+					}
+				}
+				if (existingFeed == false){
+					var feedObject:FeedObject = new FeedObject()
+					feedObject.addEventListener("FEED_OBJECT_LOADED", addFeedObject)					
+					feedObject.create(fo, authToken,name, settings.timeBetweenObjects)
+				}
+			} else {
+				noOfDisallowedFeedItems ++;					
+			}
 		}
 		
 		protected function pushPhotos(e:Event):void
@@ -269,11 +283,12 @@ package com.requests.facebook
 		}
 		
 		protected function addFeedObject(e:Event):void
-		{		
-			
-			
+		{					
 			e.target.removeEventListener("FEED_OBJECT_LOADED", addFeedObject)
 			var feedObject:FeedObject = FeedObject(e.target)
+			if(feedObject.message.indexOf("word!") != -1){
+		trace("match")
+			}
 			var compareDate:Date = new Date()
 				
 			
@@ -282,10 +297,13 @@ package com.requests.facebook
 
 			if (feedObject.created_time < compareDate){
 			noOfDisallowedFeedItems ++;
+			trace(feedObject.message)
 			trace("* Disallowed Feed Items: " + noOfDisallowedFeedItems)			
 			
-			if (noOfItemsReturned <= noOfDisallowedFeedItems + noOffeedItemsProcessed){ 
+			if (noOfItemsReturned <= noOfDisallowedFeedItems && initialPull == true){ 
 			this.eventDispatcher.dispatchEvent(new Event("NO_FEED"))
+			noOfDisallowedFeedItems = 0;
+			noOfFeedItemsProcessed = 0;
 			}
 			return
 			}
@@ -310,7 +328,13 @@ package com.requests.facebook
 					} 
 				}				
 			}						
-			
+			noOfFeedItemsProcessed ++;
+//			trace("FeedItemsProcessed" + noOfFeedItemsProcessed);
+			if (noOfFeedItemsProcessed  +  noOfDisallowedFeedItems && noOfFeedItemsProcessed > 0){
+				initialPull = false
+				noOfDisallowedFeedItems = 0;
+				noOfFeedItemsProcessed = 0;
+			}
 			feed.push(feedObject)
 			feed.sortOn("created_time",Array.NUMERIC | Array.DESCENDING)
 		}

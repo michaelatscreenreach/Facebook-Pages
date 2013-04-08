@@ -31,7 +31,7 @@ package
 		/**
 		 * 
 		 * Facebook Pages
-		 * Version 1.0.5
+		 * Version 1.0.6
 		 * 		 	 
 		 */
 		
@@ -49,10 +49,12 @@ package
 		private static const APP_NAME:String = "Facebook Pages"
 		private static const MAJOR:int=1;
 		private static const MINOR:int=0;
-		private static const BUILD:int=5;
+		private static const BUILD:int=6;
 
 		//splash timer		
 		private var splashTimer:Timer;
+
+		private var errorScreen:ErrorScreen;
 		
 		public function FacebookPages()
 		{
@@ -94,12 +96,17 @@ package
 		facebookManager = new FacebookManager(settings.authToken, settings.disallowedList, settings)	
 		
 			settings.eventDispatcher.removeEventListener("SETTINGS_LOADED", onSettingsLoaded)
-			var request:String = "https://graph.facebook.com/"+settings.facebookID+"" +		
-			"/?fields=feed.limit("+settings.feedLimit+").fields(type,story,status_type,message,picture,object_id,application, from)" +
-			",photos.type(uploaded).limit(20).fields(images,comments)" +
-			",cover,name,likes,location"+
-//			"&limit=20"+
-			"&access_token="+settings.authToken.code		
+			var request:String = "https://graph.facebook.com/"+settings.facebookID+"";
+			if(settings.allowUserContent == true){
+				request +="/?fields=feed.limit("+settings.feedLimit+").fields(type,story,status_type,message,picture,object_id,application, from)" 
+			} else {
+				request+="/?fields=posts.fields(type,story,status_type,message,picture,object_id,application, from)" 
+
+			}
+//			request+= ",photos.type(uploaded).limit(20).fields(images)" +
+			request+= ",cover,name,likes,location"
+////			"&limit=20"+
+			request+="&access_token="+settings.authToken.code		
 
 			facebookManager.request = request			
 			trace("* facebook request: " +request)
@@ -113,10 +120,8 @@ package
 		
 		private function noFeed(e:Event):void
 		{
-			e.target.removeEventListener("NO_FEED", noFeed)
-			this.removeEventListener(Event.ENTER_FRAME, onRequest)
-			
-			var errorScreen:ErrorScreen = new ErrorScreen()
+			e.target.removeEventListener("NO_FEED", noFeed)			
+			errorScreen = new ErrorScreen()
 			if (settings.allowUserContent == true){				
 				errorScreen.displayError(ErrorList.NO_POSTS_USER_CONTENT,{facebookName:facebookManager.name})
 			} else if (settings.allowUserContent == false){
@@ -139,23 +144,21 @@ package
 			}
 			
 			
-			if(facebookManager.disallowedFeedItems.indexOf("photoGroup") != -1){
-			if(facebookManager.photoGroupObjects.length > 0){
+//			if(facebookManager.disallowedFeedItems.indexOf("photoGroup") != -1){
+			if(facebookManager.photoGroupObjects.length > 0 || facebookManager.feed.length > 0 ){		
 				createDisplay()
 			} else {
 				this.addEventListener(Event.ENTER_FRAME, onRequest)
 			}
-			} else {
-			if(facebookManager.feed.length > 0){
-				createDisplay()
-			} else {
-				this.addEventListener(Event.ENTER_FRAME, onRequest)
-			}
-			}
+//			}
 		}
 		
 		private function createDisplay():void
 		{
+			//remove error message is it exists
+			if (errorScreen != null){
+				removeChild(errorScreen)
+			}
 			//create background
 			bgContainer = new Sprite()
 			addChild(bgContainer)		
@@ -222,11 +225,11 @@ package
 			customMessage.text = settings.customMessage
 			ResizeText.resize(customMessage, 1100, AssetManager.likesFormat)
 			customMessage.x = 10
-			customMessage. y = stage.stageHeight - customMessage.height -10
-			
+			customMessage. y = stage.stageHeight - customMessage.height -10			
 			header.addChild(customMessage)
 			//create feed				
 			feedVisual = new FeedVisual(facebookManager.feed, facebookManager.photoGroupObjects,settings.timeBetweenObjects)
+			feedVisual.addEventListener("NO_FEED", noFeed);
 			addChild(feedVisual)
 			facebookManager.started = true			
 			facebookManager.eventDispatcher.addEventListener("UPDATE_DATA", onUpdate)
