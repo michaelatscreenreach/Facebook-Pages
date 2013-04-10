@@ -31,7 +31,7 @@ package
 		/**
 		 * 
 		 * Facebook Pages
-		 * Version 1.0.6
+		 * Version 1.0.61
 		 * 		 	 
 		 */
 		
@@ -49,7 +49,7 @@ package
 		private static const APP_NAME:String = "Facebook Pages"
 		private static const MAJOR:int=1;
 		private static const MINOR:int=0;
-		private static const BUILD:int=6;
+		private static const BUILD:int=61;
 
 		//splash timer		
 		private var splashTimer:Timer;
@@ -103,7 +103,7 @@ package
 				request+="/?fields=posts.fields(type,story,status_type,message,picture,object_id,application, from)" 
 
 			}
-//			request+= ",photos.type(uploaded).limit(20).fields(images)" +
+			request+= ",photos.type(uploaded).limit(20).fields(images)"
 			request+= ",cover,name,likes,location"
 ////			"&limit=20"+
 			request+="&access_token="+settings.authToken.code		
