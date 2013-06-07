@@ -2,6 +2,8 @@ package com.requests.facebook.objects
 {
 	import com.adobe.serialization.json.*;
 	import com.adobe.utils.DateUtil;
+	import com.components.ProfanityList;
+	import com.components.TweetFormatter;
 	import com.data.SettingsManager;
 	import com.google.analytics.utils.URL;
 	import com.greensock.events.LoaderEvent;
@@ -35,6 +37,7 @@ package com.requests.facebook.objects
 		public var photo:String		
 		public var photoData:ByteArray
 		public var scroll:int
+		private var profanityList:ProfanityList
 		
 		//attributes
 		private var photoWidth:int = 360
@@ -46,14 +49,15 @@ package com.requests.facebook.objects
 			
 		}
 		
-		public function create(data:Object, authToken:OAuthToken, facebookName:String, scrollTime:int):void{
+		public function create(data:Object, authToken:OAuthToken, facebookName:String, scrollTime:int, profanityList:ProfanityList):void{
+			this.profanityList	= profanityList;
 			var photoLoader:URLLoader
 			this.scroll = scrollTime
 			if (data.type != null){ this.type = data.type } 
 			if (data.message != null){
 				this.message = data.message
 			} else if (data.story !=null){
-				this.message = data.story
+				this.message = TweetFormatter.checkString(data.story, profanityList.blackList, profanityList.whiteList);
 			} else {
 				message= ""
 			}

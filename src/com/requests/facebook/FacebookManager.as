@@ -1,6 +1,7 @@
 package com.requests.facebook
 {
 	import com.adobe.serialization.json.*;
+	import com.components.ProfanityList;
 	import com.data.SettingsManager;
 	import com.errors.ErrorList;
 	import com.errors.ErrorScreen;
@@ -42,9 +43,13 @@ package com.requests.facebook
 		private var noOfFeedItemsProcessed:int = 0;
 		private var noOfDisallowedFeedItems:int = 0;
 		private var initialPull:Boolean = true;	
+
+		private var profanityList:ProfanityList;
 		
 		public function FacebookManager(auth:OAuthToken, disallowedFeedItemsList:Array, settings:SettingsManager)
 		{	
+			profanityList = new ProfanityList()
+			profanityList.load()
 			photoGroupObjects = new Array();
 			this.settings = settings
 			refreshTime = settings.refreshTime
@@ -204,7 +209,7 @@ package com.requests.facebook
 				if (existingFeed == false){
 					var feedObject:FeedObject = new FeedObject()
 					feedObject.addEventListener("FEED_OBJECT_LOADED", addFeedObject)					
-					feedObject.create(fo, authToken,name, settings.timeBetweenObjects)
+					feedObject.create(fo, authToken,name, settings.timeBetweenObjects,profanityList)
 				}
 			} else {
 				noOfDisallowedFeedItems ++;					
@@ -265,7 +270,7 @@ package com.requests.facebook
 				fo.photoGroup = photoGroup				
 				var feedObject:FeedObject = new FeedObject()
 				feedObject.addEventListener("FEED_OBJECT_LOADED", addPhotoGroupObject)
-				feedObject.create(fo, authToken,name, settings.timeBetweenObjects)					
+				feedObject.create(fo, authToken,name, settings.timeBetweenObjects,profanityList)					
 				photoGroupCount +=1
 			}					
 			}				

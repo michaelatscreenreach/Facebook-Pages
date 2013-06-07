@@ -31,7 +31,7 @@ package
 		/**
 		 * 
 		 * Facebook Pages
-		 * Version 1.0.61
+		 * Version 1.0.62
 		 * 		 	 
 		 */
 		
@@ -49,7 +49,7 @@ package
 		private static const APP_NAME:String = "Facebook Pages"
 		private static const MAJOR:int=1;
 		private static const MINOR:int=0;
-		private static const BUILD:int=61;
+		private static const BUILD:int=62;
 
 		//splash timer		
 		private var splashTimer:Timer;
@@ -120,7 +120,8 @@ package
 		
 		private function noFeed(e:Event):void
 		{
-			e.target.removeEventListener("NO_FEED", noFeed)			
+			e.target.removeEventListener("NO_FEED", noFeed)
+			trace("no feed")
 			errorScreen = new ErrorScreen()
 			if (settings.allowUserContent == true){				
 				errorScreen.displayError(ErrorList.NO_POSTS_USER_CONTENT,{facebookName:facebookManager.name})
@@ -145,7 +146,7 @@ package
 			
 			
 //			if(facebookManager.disallowedFeedItems.indexOf("photoGroup") != -1){
-			if(facebookManager.photoGroupObjects.length > 0 || facebookManager.feed.length > 0 ){		
+			if(facebookManager.photoGroupObjects.length > 0 && facebookManager.feed.length > 0 ){		
 				createDisplay()
 			} else {
 				this.addEventListener(Event.ENTER_FRAME, onRequest)

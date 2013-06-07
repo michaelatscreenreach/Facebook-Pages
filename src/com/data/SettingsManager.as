@@ -83,9 +83,11 @@ package com.data
 			if (settingsURL == null || settingsURL =="")
 			{
 				//live
-				//				settingsURL="http://media.screa.ch.s3.amazonaws.com/resources/facebookPages/settings.json"
+								settingsURL="http://media.screa.ch.s3.amazonaws.com/companymedia/4fd9b0af3e5b8c22640b021d/515bfc689e3d9803cca4c4ac.json"
 				//test	
-				settingsURL = "http://media.screa.ch.s3.amazonaws.com/resources/facebookPages/test.json"
+//				settingsURL = "http://media.screa.ch.s3.amazonaws.com/resources/facebookPages/test.json"
+//				settingsURL = "http://media.screa.ch.s3.amazonaws.com/companymedia/4fd9b0af3e5b8c22640b021d/51af54dc9e3d981fcc57732b.json"
+
 				//				throw new Error("No Settings File")
 			}
 			
